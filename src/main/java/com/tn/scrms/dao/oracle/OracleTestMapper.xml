@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tn.scrms.dao.oracle.OracleTestMapper">
+
+    <insert id="insert">
+        insert into T_ORACLE_TEST (id, name, phone) values (s_sequence_pkg.get_next_rowid(),#{name},#{phone})
+    </insert>
+
+
+    <select id="getOList" resultType="com.tn.scrms.domain.OracleTestVo">
+            select  * from T_ORACLE_TEST
+    </select>
+
+
+</mapper>

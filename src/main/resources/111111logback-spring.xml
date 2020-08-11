@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <conversionRule conversionWord="ip" converterClass="com.hoau.zodiac.log.oprlog.tool.IpLogbackConverter" />
+    <springProperty scope="context" name="bootstrap.servers" source="zodiac.log.kafka.servers" />
+
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{HH:mm:ss.SSS} %contextName [%thread] IP [%ip] ${LOG_LEVEL_PATTERN:-%5p} [%X{X-B3-TraceId:-}] ${PID:- }  %-40.40logger{39}  %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}" />
+    <!--value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([${springAppName:-},%X{X-B3-TraceId:-},%X{X-B3-SpanId:-},%X{X-B3-ParentSpanId:-},%X{X-Span-Export:-}]){yellow} %clr(${PID:- }){magenta} %clr(-&#45;&#45;){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}" />-->
+
+    <!-- 测试环境.开发环境使用默认的控制台输出，如果多个环境使用相同的配置，用多个使用逗号隔开. -->
+    <springProfile name="test, pre-release, stage">
+        <appender name="KafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+            <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">
+                <layout class="ch.qos.logback.classic.PatternLayout" >
+                    <pattern>aquarius-product-${CONSOLE_LOG_PATTERN}</pattern>
+                </layout>
+                <charset>UTF-8</charset>
+            </encoder>
+            <!--kafka topic 需要与配置文件里面的topic一致-->
+            <topic>applog</topic>
+            <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.HostNameKeyingStrategy" />
+            <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" />
+            <!--<producerConfig>${bootstrap.servers}</producerConfig>-->
+            <producerConfig>bootstrap.servers=10.39.251.26:9092,10.39.251.27:9092</producerConfig>
+            <!-- use gzip to compress each batch of log messages. valid values: none, gzip, snappy  -->
+            <producerConfig>compression.type=gzip</producerConfig>
+        </appender>
+
+        <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="KafkaAppender" />
+        </appender>
+
+        <!--输出到文件-->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>/opt/app/logs/aquarius-product/aquarius-product-logback.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+        <root>
+            <level value="INFO" />
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ASYNC" />
+        </root>
+    </springProfile>
+
+    <!-- 生产环境. -->
+    <springProfile name="prod">
+        <appender name="KafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+            <encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder">
+                <layout class="ch.qos.logback.classic.PatternLayout" >
+                    <pattern>aquarius-product-${CONSOLE_LOG_PATTERN}</pattern>
+                </layout>
+                <charset>UTF-8</charset>
+            </encoder>
+            <!--kafka topic 需要与配置文件里面的topic一致-->
+            <topic>applog</topic>
+            <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.HostNameKeyingStrategy" />
+            <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" />
+            <!--<producerConfig>${bootstrap.servers}</producerConfig>-->
+            <producerConfig>bootstrap.servers=kafka-01.oc.net:9092,kafka-02.oc.net:9092,kafka-03.oc.net:9092</producerConfig>
+            <!-- use gzip to compress each batch of log messages. valid values: none, gzip, snappy  -->
+            <producerConfig>compression.type=gzip</producerConfig>
+        </appender>
+
+        <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="KafkaAppender" />
+        </appender>
+
+        <!--输出到文件-->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>/opt/app/logs/aquarius-product/aquarius-product-logback.%d{yyyy-MM-dd}.log</fileNamePattern>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+        <root>
+            <level value="INFO" />
+            <appender-ref ref="CONSOLE" />
+            <appender-ref ref="FILE" />
+            <appender-ref ref="ASYNC" />
+        </root>
+    </springProfile>
+
+</configuration>
